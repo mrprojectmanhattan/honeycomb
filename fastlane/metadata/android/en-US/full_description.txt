@@ -1,0 +1,35 @@
+Honeycomb is a gentle daily check-in app for the basics: mood, water, sleep,
+movement, and the habits and goals you are working on. It is built for someone
+who forgets things and wants the app to do the remembering, without nagging.
+
+Everything you log is a row in a local database on your phone and nowhere else.
+There is no account, no cloud, no analytics, and no ads. The app has no INTERNET
+permission at all, so it cannot phone home even by accident.
+
+Features
+
+* Mood log: a quick 1 to 5 check-in with an optional note and tags. An optional
+  hourly reminder nudges you; you can also log any time.
+* Journal: short written or voice reflections, grouped by day. After logging a
+  mood the app can offer to open a reflection for that day.
+* Water: a honey-jar tracker with a daily goal and quick-add servings.
+* Sleep: log last night by bedtime and wake time, with an optional assist that
+  reads only charger connect and disconnect events (off by default).
+* Workout: a weekly muscle-group split shown as a figure made of hexagons.
+* Goals and habits: day-to-day goals (some tracked automatically from your other
+  logs), long-horizon "major goals" with a home-screen reminder, and quit or
+  started streak counters.
+* Trends and history: a honeycomb calendar of the last 30 days, per-day and
+  per-hour averages, tag breakdowns, sleep and workout summaries, and a full
+  browsable history with edit and delete.
+* Step counter: optional, off by default, a one-shot read of the motion sensor
+  with nothing running in the background.
+* CSV export of everything, any time.
+
+Privacy
+
+The two optional helpers (sleep guess from charger events, step count from the
+motion sensor) are off until you turn them on, read only what is described, and
+are forgotten the moment you turn them off. The app never reads app usage,
+location, contacts, the microphone (except when you record a voice reflection),
+or anything about what you do.

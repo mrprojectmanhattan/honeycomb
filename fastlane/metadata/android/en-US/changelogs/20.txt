@@ -1,0 +1,7 @@
+v3.17
+
+* Journal is now its own tab, between Workout and Trends.
+* After logging a mood, Honeycomb can offer to open a reflection for that day.
+* Workout history now shows in the History tab and a new Workout section in Trends.
+* The back button and back-gesture return to the home screen instead of closing
+  the app.

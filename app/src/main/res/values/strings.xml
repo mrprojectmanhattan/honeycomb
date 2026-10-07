@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">Honeycomb</string>
+    <string name="channel_name">Mood reminders</string>
+    <string name="channel_desc">The hourly nudge to log how you are feeling.</string>
+    <string name="reminder_title">How\'s your mood?</string>
+    <string name="reminder_text">Tap to log it. Takes a few seconds.</string>
+    <string name="timer_channel_name">Timer alarms</string>
+    <string name="timer_channel_desc">Plays an alarm when a countdown timer runs out.</string>
+    <string name="shopping_channel_name">Shopping list</string>
+    <string name="shopping_channel_desc">A daily nudge about anything still on your shopping list.</string>
+    <string name="session_recap_channel_name">Session recap</string>
+    <string name="session_recap_channel_desc">A Friday nudge to voice-journal what came up in therapy while it\'s fresh.</string>
+    <string name="session_recap_title">How\'d it go today?</string>
+    <string name="session_recap_text">Quick voice note before it fades: what she said, what you\'re working on, what to bring up next time.</string>
+    <string name="checkin_channel_name">Check-in reminders</string>
+    <string name="checkin_channel_desc">A weekly nudge to do a PHQ-9 or GAD-7 check-in.</string>
+    <string name="checkin_title">Weekly check-in</string>
+    <string name="checkin_text">A couple minutes for a PHQ-9 or GAD-7 - real numbers for you and for therapy.</string>
+    <string name="med_channel_name">Medication reminders</string>
+    <string name="med_channel_desc">A nudge at the times you set for each medication.</string>
+</resources>

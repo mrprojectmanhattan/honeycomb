@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Honeycomb</string>
+    <string name="channel_name">Mood reminders</string>
+    <string name="channel_desc">The hourly buzz to log how you are feeling.</string>
+    <string name="reminder_title">Mood check</string>
+    <string name="reminder_text">How are you feeling?</string>
+</resources>

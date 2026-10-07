@@ -1,0 +1,35 @@
+# DRAFT F-Droid metadata for the fdroiddata submission.
+#
+# This file is NOT read by the app build. It is a staging copy of what goes at
+#   metadata/com.mark.moodlogger.yml
+# in a fork of https://gitlab.com/fdroid/fdroiddata , as a merge request.
+#
+# Fill in <REPO_URL> once the public repo exists, then test locally with:
+#   fdroid build -v -l com.mark.moodlogger      (needs the fdroidserver tools + Docker/Linux)
+#   fdroid lint com.mark.moodlogger
+# See https://f-droid.org/docs/Building_Applications/ and
+#     https://f-droid.org/docs/Inclusion_How-To/
+
+Categories:
+  - Health & Fitness
+License: GPL-3.0-or-later
+AuthorName: <YOUR NAME OR HANDLE>
+SourceCode: <REPO_URL>
+IssueTracker: <REPO_URL>/issues
+Changelog: <REPO_URL>/blob/HEAD/CHANGELOG.md
+
+RepoType: git
+Repo: <REPO_URL>.git
+
+Builds:
+  - versionName: "3.17"
+    versionCode: 20
+    commit: v3.17
+    subdir: app
+    gradle:
+      - yes
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags ^v[0-9.]+$
+CurrentVersion: "3.17"
+CurrentVersionCode: 20

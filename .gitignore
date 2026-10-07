@@ -1,0 +1,27 @@
+*.iml
+.gradle
+/.gradle
+/.kotlin
+/local.properties
+/.idea
+.DS_Store
+/build
+/app/build
+/captures
+.externalNativeBuild
+.cxx
+*.apk
+*.db.bak-*
+
+# local working files, not part of the project
+/_backup_*/
+/_verify_*/
+/_phone_backup_*/
+/_env.ps1
+/build-debug.ps1
+/install.ps1
+/wear/install.ps1
+/wear/build
+
+# old pre-publish git history, kept locally only, never committed
+/.git-sept2026-backup-doNotPublish/
