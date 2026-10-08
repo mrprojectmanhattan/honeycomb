@@ -2,7 +2,7 @@
 
 Versions are `versionName` (`versionCode`). Dates are when the build was cut.
 
-## 3.30 (33) — 2026-10-07 (privacy fix: disable Android Auto Backup)
+## 3.30 (33) — 2026-10-07 (privacy fixes: Auto Backup, app-lock PIN hashing)
 
 - A real privacy gap, flagged by an outside reviewer on the public repo: the manifest
   had `android:allowBackup="true"` with no exclusion rules, which let Android's system
@@ -17,6 +17,14 @@ Versions are `versionName` (`versionCode`). Dates are when the build was cut.
   the phone or watch module, no Firebase/Crashlytics/analytics SDK anywhere in the
   project, and the phone<->watch sync uses the Wearable Data Layer's local
   Bluetooth/Wi-Fi Direct link only, never a cloud server.
+- **Second real find, same reviewer:** the app-lock PIN was a single SHA-256 round over
+  a 6-digit keyspace (a million possibilities) - fast enough to brute-force completely
+  in well under a second if the salt+hash ever got out. Replaced with PBKDF2-HMAC-SHA256
+  at 210,000 rounds (same `newSalt`/`hashPin`/`verifyPin` interface, no other file
+  changed). Raises the cost of a full brute force by roughly five orders of magnitude
+  while staying fast enough for a real unlock screen. **One-time consequence: this
+  invalidates any PIN already set under the old scheme** - if you'd set one, you'll need
+  to set it again once.
 
 ## 3.29 (32) — 2026-09-28 (health summary lock, PHQ-9/GAD-7, medication reminders)
 
