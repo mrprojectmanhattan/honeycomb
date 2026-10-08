@@ -2,7 +2,7 @@
 
 Versions are `versionName` (`versionCode`). Dates are when the build was cut.
 
-## 3.31 (34) — 2026-10-07 (app-lock cold-start exposure, wrong-PIN feedback, med reminder midnight bug)
+## 3.31 (34) — 2026-10-07 (app-lock cold-start exposure, wrong-PIN feedback, med reminder midnight bug, CSV export, F-Droid metadata)
 
 - **App lock could briefly expose real content on cold start.** The settings StateFlow
   starts from a plain placeholder default (`appLockEnabled = false`) until the real value
@@ -22,7 +22,16 @@ Versions are `versionName` (`versionCode`). Dates are when the build was cut.
   minutes apart instead of 1, so a reminder delayed across the day boundary (which the
   code's own comment already acknowledged can happen) was silently dropped, no
   notification, no error. Fixed with a circular distance check instead.
-- All three found and confirmed by the same outside reviewer, same night as 3.30.
+- **A keyword containing a double quote, like `bad"day`, broke CSV export.** The note
+  field already escaped embedded quotes (`replace("\"", "\"\"")`) but the keywords field
+  didn't get the same treatment before being wrapped in quotes, so an unescaped quote
+  inside a free-text keyword name corrupted the row's column structure. Fixed with the
+  same escaping the note field already had.
+- **The draft F-Droid metadata (`packaging/fdroid/com.mark.moodlogger.yml`) still said
+  `License: GPL-3.0-or-later`**, left over from before the repo switched to MIT. Not
+  read by the app build and not yet submitted anywhere, but wrong and sitting in the
+  public repo. Fixed to `License: MIT`, matching `LICENSE`.
+- All five found and confirmed by the same outside reviewer, same night as 3.30.
 
 ## 3.30 (33) — 2026-10-07 (privacy fixes: Auto Backup, app-lock PIN hashing)
 

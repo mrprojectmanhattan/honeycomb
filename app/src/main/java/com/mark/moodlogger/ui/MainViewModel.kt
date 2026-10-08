@@ -852,7 +852,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             for (r in rows) {
                 val e = r.entry
                 val note = e.note.replace("\"", "\"\"")
-                val kw = r.keywordNames.joinToString(";")
+                // Keywords are free-text (see Keyword.kt, no character restrictions) -
+                // same embedded-quote escaping the note field already gets, or a keyword
+                // like `bad"day` breaks the quoted CSV field and corrupts the row.
+                // Flagged by an outside reviewer.
+                val kw = r.keywordNames.joinToString(";").replace("\"", "\"\"")
                 append("\"${stamp.format(Date(e.timestamp))}\",")
                 append("${e.score},")
                 append("${MoodScale.label(e.score)},")
