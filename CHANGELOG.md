@@ -2,6 +2,22 @@
 
 Versions are `versionName` (`versionCode`). Dates are when the build was cut.
 
+## 3.30 (33) — 2026-10-07 (privacy fix: disable Android Auto Backup)
+
+- A real privacy gap, flagged by an outside reviewer on the public repo: the manifest
+  had `android:allowBackup="true"` with no exclusion rules, which let Android's system
+  Auto Backup silently copy the whole app data directory (mood.db, journal entries,
+  medications, PHQ-9/GAD-7 check-ins, even the app-lock PIN hash) to the user's Google
+  account backup storage - contradicting PRIVACY.md's "none of it leaves the device"
+  promise. Fixed by setting `allowBackup="false"`, matching the watch companion app
+  (which already had it right) and the project's standing no-telemetry rule. This stops
+  future backups; it does not retroactively delete anything a device may have already
+  backed up before this fix - check Google Account > Backup if that matters to you.
+- Full audit done at the same time, confirmed clean: no `INTERNET` permission on either
+  the phone or watch module, no Firebase/Crashlytics/analytics SDK anywhere in the
+  project, and the phone<->watch sync uses the Wearable Data Layer's local
+  Bluetooth/Wi-Fi Direct link only, never a cloud server.
+
 ## 3.29 (32) — 2026-09-28 (health summary lock, PHQ-9/GAD-7, medication reminders)
 
 - The Care tab's "Summary" view can now open full-screen and locked - no back button,
