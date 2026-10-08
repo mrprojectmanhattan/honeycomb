@@ -796,7 +796,18 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         val today = startOfTodayEpochDay()
         val row = dao.stepDay(today)
         if (row == null) {
-            dao.upsertStepDay(StepDay(today, steps = 0, lastCumulative = cumulative))
+            // The hardware counter never resets at midnight - the first sample of a new
+            // day still needs a real baseline to diff against, not a blind reset to 0.
+            // Flagged by an outside reviewer: every step walked before the first sample
+            // of the day was being silently dropped.
+            val yesterday = dao.stepDay(today - 1)
+            val steps = if (yesterday != null) {
+                val delta = cumulative - yesterday.lastCumulative
+                if (delta < 0) cumulative.coerceAtLeast(0L).toInt() else delta.toInt()
+            } else {
+                0 // no prior baseline at all - genuinely the first-ever sample
+            }
+            dao.upsertStepDay(StepDay(today, steps = steps.coerceAtLeast(0), lastCumulative = cumulative))
         } else {
             val delta = cumulative - row.lastCumulative
             val add = if (delta < 0) cumulative.coerceAtLeast(0L).toInt() else delta.toInt()

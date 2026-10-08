@@ -2,6 +2,25 @@
 
 Versions are `versionName` (`versionCode`). Dates are when the build was cut.
 
+## 3.34 (37) — 2026-10-07 (step counter dropped a full day's steps on first sample)
+
+- **The hardware step counter is a running total since the phone's last reboot - it
+  never resets at midnight - but the app's own daily tracking didn't account for
+  that.** When no `StepDay` row existed yet for today (i.e. the very first sample of
+  the day, whenever that happened to land), the code stored `steps = 0` and just
+  re-baselined `lastCumulative` to the current reading, instead of diffing against
+  yesterday's stored cumulative the way every later sample that same day correctly
+  does. Every step walked before that first sample - which could be the entire day's
+  walking if the app wasn't opened until evening - was silently discarded, not
+  undercounted by a little, dropped entirely.
+- Fixed by giving the first sample of a new day the same real baseline every other
+  sample already gets: diff against yesterday's last known cumulative (same
+  reboot-safety handling as the existing code - a negative delta means the phone
+  rebooted, so the raw cumulative is treated as this day's fresh count). Only
+  genuinely the first sample ever (no prior day on record at all) still starts at 0,
+  since there's nothing to diff against.
+- Found and fixed the same night as everything above, same outside reviewer.
+
 ## 3.33 (36) — 2026-10-07 (app-lock readiness race, medication lateness)
 
 - **The v3.31 app-lock cold-start fix had a residual race.** `settingsReady` and the
