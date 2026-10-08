@@ -31,15 +31,18 @@ class MainActivity : FragmentActivity() {
         val startOnCare = intent?.getBooleanExtra(Notifications.EXTRA_OPEN_CARE, false) == true
         setContent {
             MoodLoggerTheme {
-                val settings by vm.settings.collectAsState()
-                val settingsReady by vm.settingsReady.collectAsState()
+                // One combined flow, one collectAsState() - settingsReady and the real
+                // settings must never be read from two separate flows here, or they can
+                // be observed a recomposition apart and reopen the cold-start exposure
+                // gap. See MainViewModel.appLockReadiness.
+                val lockState by vm.appLockReadiness.collectAsState()
                 AppLockGate(
-                    settingsReady = settingsReady,
-                    lockEnabled = settings.appLockEnabled,
+                    settingsReady = lockState.ready,
+                    lockEnabled = lockState.settings.appLockEnabled,
                     checkPin = { pin ->
                         when {
-                            AppLock.verifyPin(pin, settings.appLockPinHash, settings.appLockSalt) -> true
-                            AppLock.verifyLegacyPin(pin, settings.appLockPinHash, settings.appLockSalt) -> {
+                            AppLock.verifyPin(pin, lockState.settings.appLockPinHash, lockState.settings.appLockSalt) -> true
+                            AppLock.verifyLegacyPin(pin, lockState.settings.appLockPinHash, lockState.settings.appLockSalt) -> {
                                 // Correct PIN, just stored under the pre-2026-10-07 scheme -
                                 // upgrade it silently so this path never fires again.
                                 vm.upgradeLegacyPin(pin)
@@ -48,7 +51,7 @@ class MainActivity : FragmentActivity() {
                             else -> false
                         }
                     },
-                    biometricEnabled = settings.appLockBiometricEnabled,
+                    biometricEnabled = lockState.settings.appLockBiometricEnabled,
                     requestBiometric = { onSuccess -> showBiometricPrompt(onSuccess) },
                 ) {
                     AppRoot(

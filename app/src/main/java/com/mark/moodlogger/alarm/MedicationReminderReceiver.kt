@@ -16,23 +16,35 @@ class MedicationReminderReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val pending = goAsync()
         val app = context.applicationContext
+        // Read off the Intent synchronously, here, before handing off to the coroutine -
+        // the Intent isn't guaranteed safe to hold onto past onReceive returning.
+        val targetMinute = intent.getIntExtra(MedicationReminderScheduler.EXTRA_TARGET_MINUTE, -1)
         CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
             try {
                 val dao = MoodDatabase.get(app).moodDao()
                 val meds = dao.activeMedicationReminders()
 
-                val cal = Calendar.getInstance()
-                val nowMinute = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE)
-                // A couple minutes of tolerance either side, in case the alarm fired a
-                // little early/late (setAndAllowWhileIdle on the inexact-alarm path can
-                // drift on some devices). Distance wraps at midnight (1440 minutes/day) -
-                // a plain abs() would read 23:59 vs 00:00 as 1439 minutes apart instead of
-                // 1, silently dropping a reminder that's delivered a minute late across the
-                // day boundary. Flagged by an outside reviewer.
-                val due = meds.filter { m ->
-                    m.reminderMinuteList().any { minute ->
-                        val diff = kotlin.math.abs(minute - nowMinute)
-                        minOf(diff, 1440 - diff) <= 2
+                // Match on the exact minute this alarm was scheduled for, carried on the
+                // Intent itself, not a comparison against the live clock - correct no
+                // matter how late Android actually delivers it (Doze, battery
+                // optimization, and similar can delay even an exact alarm by more than a
+                // couple minutes - the old now-relative window silently dropped the
+                // reminder whenever that happened, midnight-wrap or not). Flagged by an
+                // outside reviewer.
+                val due = if (targetMinute >= 0) {
+                    meds.filter { m -> m.reminderMinuteList().contains(targetMinute) }
+                } else {
+                    // No target minute on the Intent - a stale alarm scheduled before this
+                    // upgrade. Fall back to the old now-relative window (already
+                    // midnight-safe) just this once; every alarm booked from here on
+                    // carries its own minute.
+                    val cal = Calendar.getInstance()
+                    val nowMinute = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE)
+                    meds.filter { m ->
+                        m.reminderMinuteList().any { minute ->
+                            val diff = kotlin.math.abs(minute - nowMinute)
+                            minOf(diff, 1440 - diff) <= 2
+                        }
                     }
                 }
                 if (due.isNotEmpty()) {

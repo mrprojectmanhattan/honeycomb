@@ -78,14 +78,25 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             viewModelScope, SharingStarted.WhileSubscribed(5_000), Settings(),
         )
 
-    /** True only once the real settings have loaded from disk at least once. [settings]
-     *  itself starts as the plain Settings() default (appLockEnabled = false) until then,
-     *  so AppLockGate needs this to fail closed on cold start instead of trusting that
-     *  placeholder and briefly rendering real content before the real lock state arrives.
-     *  Flagged by an outside reviewer. */
-    val settingsReady: StateFlow<Boolean> =
-        settingsStore.settings.map { true }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+    /** Settings plus whether they've genuinely loaded from disk yet, as ONE value.
+     *  [settings] above starts as the plain Settings() placeholder (appLockEnabled =
+     *  false) until the real DataStore value loads - the first version of this fix
+     *  (2026-10-07) exposed that as a second, separate StateFlow, but two independent
+     *  StateFlows collected via two separate collectAsState() calls can still update a
+     *  recomposition apart from each other, so "ready" could arrive one frame before
+     *  the real settings did and the gate would briefly trust the stale placeholder
+     *  anyway - reopening the exact cold-start exposure gap it was meant to close.
+     *  AppLockGate must read both fields from this single flow, never [settings]
+     *  directly, so there is only one thing to observe and no way for them to be seen
+     *  out of sync. Flagged by an outside reviewer. */
+    data class AppLockReadiness(val settings: Settings, val ready: Boolean)
+
+    val appLockReadiness: StateFlow<AppLockReadiness> =
+        settingsStore.settings.map { AppLockReadiness(it, ready = true) }
+            .stateIn(
+                viewModelScope, SharingStarted.WhileSubscribed(5_000),
+                AppLockReadiness(Settings(), ready = false),
+            )
 
     /** Ounces of water logged since midnight today. Recomputed on every change. */
     val waterToday: StateFlow<Int> =

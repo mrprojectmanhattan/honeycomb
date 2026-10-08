@@ -21,31 +21,49 @@ object MedicationReminderScheduler {
 
     private const val REQUEST_CODE = 4716
 
+    /** Carries which reminder-minute this specific alarm firing is for, so the receiver
+     *  can match on that directly instead of comparing against the live clock. A plain
+     *  now-relative window (the original fix) still silently drops a reminder delivered
+     *  more than a couple minutes late - real on Android under Doze/battery optimization,
+     *  not just a midnight-wrap edge case. Flagged by an outside reviewer. */
+    const val EXTRA_TARGET_MINUTE = "target_minute"
+
     suspend fun reschedule(context: Context) {
         val app = context.applicationContext
         val meds = MoodDatabase.get(app).moodDao().activeMedicationReminders()
         val minutes = meds.flatMap { it.reminderMinuteList() }.toSet()
         val am = app.getSystemService(AlarmManager::class.java) ?: return
+
+        val next = nextFire(minutes)
+        if (next == null) {
+            val pi = PendingIntent.getBroadcast(
+                app,
+                REQUEST_CODE,
+                Intent(app, MedicationReminderReceiver::class.java),
+                PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+            )
+            if (pi != null) {
+                am.cancel(pi)
+                pi.cancel()
+            }
+            return
+        }
+
+        val intent = Intent(app, MedicationReminderReceiver::class.java)
+            .putExtra(EXTRA_TARGET_MINUTE, next.minute)
         val pi = PendingIntent.getBroadcast(
             app,
             REQUEST_CODE,
-            Intent(app, MedicationReminderReceiver::class.java),
+            intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-
-        val triggerAt = nextFireMillis(minutes)
-        if (triggerAt == null) {
-            am.cancel(pi)
-            pi.cancel()
-            return
-        }
 
         val canExact =
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) am.canScheduleExactAlarms() else true
         if (canExact) {
-            am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pi)
+            am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, next.millis, pi)
         } else {
-            am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pi)
+            am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, next.millis, pi)
         }
     }
 
@@ -63,8 +81,11 @@ object MedicationReminderScheduler {
         }
     }
 
-    /** Soonest future occurrence of any minute-of-day in [minutes], today or tomorrow. */
-    private fun nextFireMillis(minutes: Set<Int>): Long? {
+    private data class NextFire(val millis: Long, val minute: Int)
+
+    /** Soonest future occurrence of any minute-of-day in [minutes], today or tomorrow,
+     *  plus which minute it was - the minute travels with the alarm from here on. */
+    private fun nextFire(minutes: Set<Int>): NextFire? {
         if (minutes.isEmpty()) return null
         val now = System.currentTimeMillis()
         return minutes.flatMap { m ->
@@ -74,7 +95,7 @@ object MedicationReminderScheduler {
                 set(Calendar.SECOND, 0)
                 set(Calendar.MILLISECOND, 0)
             }.timeInMillis
-            listOf(base, base + 24L * 60 * 60 * 1000)
-        }.filter { it > now + 1000 }.minOrNull()
+            listOf(NextFire(base, m), NextFire(base + 24L * 60 * 60 * 1000, m))
+        }.filter { it.millis > now + 1000 }.minByOrNull { it.millis }
     }
 }

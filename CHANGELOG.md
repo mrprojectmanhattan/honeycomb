@@ -2,6 +2,26 @@
 
 Versions are `versionName` (`versionCode`). Dates are when the build was cut.
 
+## 3.33 (36) — 2026-10-07 (app-lock readiness race, medication lateness)
+
+- **The v3.31 app-lock cold-start fix had a residual race.** `settingsReady` and the
+  real `settings` were two separate StateFlows, each collected via its own
+  `collectAsState()` - Compose doesn't guarantee they update in the same
+  recomposition, so `settingsReady` could flip true a frame before `settings` caught
+  up from its placeholder default, briefly trusting the stale `appLockEnabled = false`
+  and reopening the exact exposure gap v3.31 was meant to close. Fixed by bundling
+  both into one `AppLockReadiness` value delivered through a single StateFlow -
+  physically only one thing to observe, so they can't be seen out of sync.
+- **A medication reminder delivered more than 2 minutes late, for any reason, not just
+  a midnight crossing, still silently failed to fire.** The due-check always compared
+  against the live clock with a tight tolerance window; Doze and battery optimization
+  can delay even an exact alarm well past that. Fixed properly instead of just
+  widening the window: the alarm now carries the exact minute it was scheduled for in
+  its own Intent, and the receiver matches on that directly - correct no matter how
+  late delivery actually is. The old now-relative check is kept only as a one-time
+  fallback for a stale alarm booked before this upgrade.
+- Both found and confirmed by the same outside reviewer, same night as everything above.
+
 ## 3.32 (35) — 2026-10-07 (legacy PIN lockout fixed)
 
 - **v3.30 strengthened the PIN hash (PBKDF2) but didn't migrate PINs set before it** -
