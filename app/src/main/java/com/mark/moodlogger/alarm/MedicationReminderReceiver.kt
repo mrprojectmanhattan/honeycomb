@@ -25,9 +25,15 @@ class MedicationReminderReceiver : BroadcastReceiver() {
                 val nowMinute = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE)
                 // A couple minutes of tolerance either side, in case the alarm fired a
                 // little early/late (setAndAllowWhileIdle on the inexact-alarm path can
-                // drift on some devices).
+                // drift on some devices). Distance wraps at midnight (1440 minutes/day) -
+                // a plain abs() would read 23:59 vs 00:00 as 1439 minutes apart instead of
+                // 1, silently dropping a reminder that's delivered a minute late across the
+                // day boundary. Flagged by an outside reviewer.
                 val due = meds.filter { m ->
-                    m.reminderMinuteList().any { minute -> kotlin.math.abs(minute - nowMinute) <= 2 }
+                    m.reminderMinuteList().any { minute ->
+                        val diff = kotlin.math.abs(minute - nowMinute)
+                        minOf(diff, 1440 - diff) <= 2
+                    }
                 }
                 if (due.isNotEmpty()) {
                     Notifications.showMedReminder(app, due.map { it.name })

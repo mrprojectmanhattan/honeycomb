@@ -26,6 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -49,6 +50,13 @@ fun LockScreen(
     var entered by remember { mutableStateOf("") }
     var showError by remember { mutableStateOf(false) }
 
+    // Wrong-PIN feedback used to be invisible in practice (flagged by an outside
+    // reviewer): clearing `entered` right after setting showError=true re-triggered this
+    // same effect (keyed on `entered`), and the old `else` branch reset showError=false
+    // on that very next run - so "Wrong PIN" and the red dots never actually stayed on
+    // screen long enough to see. Clearing `entered` immediately is still correct (lets
+    // the user retype right away); showError's own lifetime is now handled by the
+    // separate timed effect below instead.
     LaunchedEffect(entered) {
         if (entered.length == 6) {
             if (onCheckPin(entered)) {
@@ -57,7 +65,18 @@ fun LockScreen(
                 showError = true
                 entered = ""
             }
-        } else {
+        } else if (entered.isNotEmpty()) {
+            // Starting a fresh attempt - dismiss the old error right away.
+            showError = false
+        }
+    }
+
+    // Real, visible feedback: "Wrong PIN" stays up for a moment on its own timer, not
+    // tied to `entered`'s immediate reset, unless the block above already cleared it
+    // because the user started typing again.
+    LaunchedEffect(showError) {
+        if (showError) {
+            delay(900)
             showError = false
         }
     }

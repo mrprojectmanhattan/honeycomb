@@ -78,6 +78,15 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             viewModelScope, SharingStarted.WhileSubscribed(5_000), Settings(),
         )
 
+    /** True only once the real settings have loaded from disk at least once. [settings]
+     *  itself starts as the plain Settings() default (appLockEnabled = false) until then,
+     *  so AppLockGate needs this to fail closed on cold start instead of trusting that
+     *  placeholder and briefly rendering real content before the real lock state arrives.
+     *  Flagged by an outside reviewer. */
+    val settingsReady: StateFlow<Boolean> =
+        settingsStore.settings.map { true }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
     /** Ounces of water logged since midnight today. Recomputed on every change. */
     val waterToday: StateFlow<Int> =
         dao.observeWaterLogs()

@@ -32,7 +32,9 @@ class MainActivity : FragmentActivity() {
         setContent {
             MoodLoggerTheme {
                 val settings by vm.settings.collectAsState()
+                val settingsReady by vm.settingsReady.collectAsState()
                 AppLockGate(
+                    settingsReady = settingsReady,
                     lockEnabled = settings.appLockEnabled,
                     checkPin = { pin ->
                         AppLock.verifyPin(pin, settings.appLockPinHash, settings.appLockSalt)

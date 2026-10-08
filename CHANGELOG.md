@@ -2,6 +2,28 @@
 
 Versions are `versionName` (`versionCode`). Dates are when the build was cut.
 
+## 3.31 (34) — 2026-10-07 (app-lock cold-start exposure, wrong-PIN feedback, med reminder midnight bug)
+
+- **App lock could briefly expose real content on cold start.** The settings StateFlow
+  starts from a plain placeholder default (`appLockEnabled = false`) until the real value
+  loads from disk, and `AppLockGate` trusted that placeholder immediately - so with the
+  lock turned on, real app content could render for a moment before the lock screen
+  caught up. Fixed: the gate now always starts locked (fail-closed) and shows a neutral
+  blank screen - never real content, not even the PIN pad - until settings have actually
+  loaded for real.
+- **Wrong-PIN feedback was invisible in practice.** "Wrong PIN" and the red dot state
+  were cleared in the same effect run that set them, so they never stayed on screen long
+  enough to see - the entry just vanished with no visible reason. Fixed: the error now
+  holds for ~900ms (or clears immediately once you start a new attempt, whichever's
+  first) instead of self-cancelling the same frame.
+- **A medication reminder at 23:59 could silently fail to fire if delivered a minute
+  late, at 00:00.** The due-time check compared raw minute-of-day values with a flat
+  `abs()`, which doesn't know the clock wraps at midnight - 23:59 and 00:00 read as 1439
+  minutes apart instead of 1, so a reminder delayed across the day boundary (which the
+  code's own comment already acknowledged can happen) was silently dropped, no
+  notification, no error. Fixed with a circular distance check instead.
+- All three found and confirmed by the same outside reviewer, same night as 3.30.
+
 ## 3.30 (33) — 2026-10-07 (privacy fixes: Auto Backup, app-lock PIN hashing)
 
 - A real privacy gap, flagged by an outside reviewer on the public repo: the manifest
