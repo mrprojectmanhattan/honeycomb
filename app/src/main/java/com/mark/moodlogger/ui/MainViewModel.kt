@@ -702,6 +702,15 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch { settingsStore.setAppLockPin(pin) }
     }
 
+    /** Called right after an already-verified PIN turns out to be stored under the
+     *  pre-2026-10-07 single-round SHA-256 scheme (AppLock.verifyLegacyPin matched, not
+     *  verifyPin) - transparently re-hashes it under the current PBKDF2 scheme so this
+     *  fallback never has to fire again for this PIN. The caller must have already
+     *  confirmed the PIN is correct; this never prompts or re-checks anything itself. */
+    fun upgradeLegacyPin(pin: String) {
+        viewModelScope.launch { settingsStore.setAppLockPin(pin) }
+    }
+
     fun clearAppLock() {
         viewModelScope.launch { settingsStore.clearAppLock() }
     }

@@ -2,6 +2,23 @@
 
 Versions are `versionName` (`versionCode`). Dates are when the build was cut.
 
+## 3.32 (35) — 2026-10-07 (legacy PIN lockout fixed)
+
+- **v3.30 strengthened the PIN hash (PBKDF2) but didn't migrate PINs set before it** -
+  documented as a known one-time cost at the time ("invalidates any PIN already set
+  under the old scheme"), but an outside reviewer pushed back: `verifyPin` could never
+  match a hash stored under the old scheme, which means anyone who'd set a PIN before
+  v3.30 would see "Wrong PIN" on every correct entry, no explanation, effectively locked
+  out of their own data with no clear reason why. Documenting a lockout isn't the same
+  as not shipping one.
+- **Fixed properly: transparent upgrade on next correct entry.** If the current PBKDF2
+  check fails, the app now falls back once to the old single-round SHA-256 scheme
+  (`AppLock.verifyLegacyPin`) purely to confirm the PIN is genuinely correct - if it
+  matches, the PIN is accepted and silently re-hashed under PBKDF2
+  (`MainViewModel.upgradeLegacyPin`), so the fallback path is never needed again for
+  that PIN. Nobody has to reset anything; nobody gets locked out.
+- Found and fixed the same night as everything above, same outside reviewer.
+
 ## 3.31 (34) — 2026-10-07 (app-lock cold-start exposure, wrong-PIN feedback, med reminder midnight bug, CSV export, F-Droid metadata)
 
 - **App lock could briefly expose real content on cold start.** The settings StateFlow

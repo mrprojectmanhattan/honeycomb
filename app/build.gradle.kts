@@ -13,8 +13,8 @@ android {
         applicationId = "com.mark.moodlogger"
         minSdk = 26
         targetSdk = 35
-        versionCode = 34
-        versionName = "3.31"
+        versionCode = 35
+        versionName = "3.32"
     }
 
     buildTypes {

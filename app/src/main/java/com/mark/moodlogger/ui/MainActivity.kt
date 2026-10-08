@@ -37,7 +37,16 @@ class MainActivity : FragmentActivity() {
                     settingsReady = settingsReady,
                     lockEnabled = settings.appLockEnabled,
                     checkPin = { pin ->
-                        AppLock.verifyPin(pin, settings.appLockPinHash, settings.appLockSalt)
+                        when {
+                            AppLock.verifyPin(pin, settings.appLockPinHash, settings.appLockSalt) -> true
+                            AppLock.verifyLegacyPin(pin, settings.appLockPinHash, settings.appLockSalt) -> {
+                                // Correct PIN, just stored under the pre-2026-10-07 scheme -
+                                // upgrade it silently so this path never fires again.
+                                vm.upgradeLegacyPin(pin)
+                                true
+                            }
+                            else -> false
+                        }
                     },
                     biometricEnabled = settings.appLockBiometricEnabled,
                     requestBiometric = { onSuccess -> showBiometricPrompt(onSuccess) },

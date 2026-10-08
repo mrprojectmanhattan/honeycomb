@@ -1,5 +1,6 @@
 package com.mark.moodlogger.data
 
+import java.security.MessageDigest
 import java.security.SecureRandom
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
@@ -41,5 +42,26 @@ object AppLock {
     fun verifyPin(pin: String, storedHash: String, salt: String): Boolean {
         if (storedHash.isEmpty() || salt.isEmpty()) return false
         return hashPin(pin, salt) == storedHash
+    }
+
+    /**
+     * The pre-2026-10-07 scheme: one unsalted-round-equivalent SHA-256 call. verifyPin
+     * above can never match a hash stored under this old scheme (PBKDF2 output ≠ a
+     * single SHA-256 round), which would otherwise lock out everyone who'd already set
+     * a PIN with no way back in and no clear reason why. This exists only so the caller
+     * can detect that one-time case, confirm the PIN was genuinely correct, and
+     * re-hash it under the real PBKDF2 scheme (see MainViewModel.upgradeLegacyPin) -
+     * never used to accept a PIN on its own. Flagged by an outside reviewer.
+     */
+    private fun legacyHashPin(pin: String, salt: String): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+        digest.update(salt.toByteArray(Charsets.UTF_8))
+        val hash = digest.digest(pin.toByteArray(Charsets.UTF_8))
+        return hash.joinToString("") { "%02x".format(it) }
+    }
+
+    fun verifyLegacyPin(pin: String, storedHash: String, salt: String): Boolean {
+        if (storedHash.isEmpty() || salt.isEmpty()) return false
+        return legacyHashPin(pin, salt) == storedHash
     }
 }
